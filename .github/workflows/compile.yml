@@ -1,25 +1,17 @@
-name: Compile MQL5
+name: Compile MQL
 
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Compile MQL5 Code
+      - name: Compile MQL Code
         uses: fx31337/mql-compile-action@v2
         with:
-          path: 'XAUUSD_EMA_RSI_ATR_EA.mq5'
           init-platform: true
-
-      - name: Upload Compiled .ex5 Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Compiled-EA
-          path: '*.ex5'
+          # Specify path if your files are in a subfolder (e.g., 'Experts/MyRobot.mq4')
+          # path: '.' 
