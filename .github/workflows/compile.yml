@@ -16,10 +16,10 @@ jobs:
         uses: fx31337/mql-compile-action@v2
         with:
           path: 'XAUUSD_EMA_RSI_ATR_EA.mq5'
+          init-platform: true
 
       - name: Upload Compiled .ex5 Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Compiled-EA
           path: '*.ex5'
-          
