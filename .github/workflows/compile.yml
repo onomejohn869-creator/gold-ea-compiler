@@ -1,17 +1,25 @@
-name: Compile MQL
+name: compile
 
-on: [push]
+on: push
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Compile MQL Code
+      - name: Compile EA
         uses: fx31337/mql-compile-action@v2
         with:
+          path: 'XAUUSD_EMA_RSI_ATR_EA.mq5'
+          include: '.'
           init-platform: true
-          # Specify path if your files are in a subfolder (e.g., 'Experts/MyRobot.mq4')
-          # path: '.' 
+          mt-version: '5.0.0.3815'
+          log-file: 'compile.log'
+          verbose: true
+
+      - name: Show compile log
+        if: always()
+        run: Get-Content compile.log
+        shell: pwsh
