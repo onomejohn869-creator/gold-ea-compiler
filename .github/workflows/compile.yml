@@ -9,17 +9,46 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Compile EA
-        uses: fx31337/mql-compile-action@v2
-        with:
-          path: 'XAUUSD_EMA_RSI_ATR_EA.mq5'
-          include: '.'
-          init-platform: true
-          mt-version: '5.0.0.3815'
-          log-file: 'compile.log'
-          verbose: true
-
-      - name: Show compile log
-        if: always()
-        run: Get-Content compile.log
+      - name: Download MetaTrader 5 installer
         shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -OutFile "mt5setup.exe"
+
+      - name: Install MetaTrader 5 silently
+        shell: pwsh
+        run: |
+          Start-Process -FilePath ".\mt5setup.exe" -ArgumentList "/auto","/path:C:\mt5" -Wait
+
+      - name: Verify MetaEditor was installed
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\mt5\metaeditor64.exe")) {
+            Write-Error "metaeditor64.exe not found after install!"
+            exit 1
+          }
+          Write-Host "MetaEditor found at C:\mt5\metaeditor64.exe"
+
+      - name: Compile EA
+        shell: pwsh
+        run: |
+          $ea = "$(Get-Location)\XAUUSD_EMA_RSI_ATR_EA.mq5"
+          & "C:\mt5\metaeditor64.exe" /compile:"$ea" /inc:"C:\mt5\MQL5\Include" /log:"compile.log"
+          Get-Content compile.log
+
+      - name: Fail the job if the log shows errors
+        shell: pwsh
+        run: |
+          if (Select-String -Path compile.log -Pattern "error" -Quiet) {
+            Write-Error "Compilation reported errors — see log above."
+            exit 1
+          }
+          Write-Host "Compilation succeeded."
+
+      - name: Upload compiled EA + log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-ea
+          path: |
+            *.ex5
+            compile.log
