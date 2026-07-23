@@ -28,12 +28,44 @@ jobs:
           }
           Write-Host "MetaEditor found at C:\mt5\metaeditor64.exe"
 
+      - name: Launch terminal once to populate MQL5 folder structure
+        shell: pwsh
+        run: |
+          Start-Process -FilePath "C:\mt5\terminal64.exe" -ArgumentList "/portable"
+          Start-Sleep -Seconds 30
+          Get-Process terminal64 -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep -Seconds 3
+
+      - name: Verify standard library exists
+        shell: pwsh
+        run: |
+          $tradeInclude = "C:\mt5\MQL5\Include\Trade\Trade.mqh"
+          if (-not (Test-Path $tradeInclude)) {
+            Write-Warning "Trade.mqh not found yet at $tradeInclude - listing what's there:"
+            Get-ChildItem "C:\mt5\MQL5" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 30 FullName
+          } else {
+            Write-Host "Found standard library at $tradeInclude"
+          }
+
       - name: Compile EA
         shell: pwsh
         run: |
           $ea = "$(Get-Location)\XAUUSD_EMA_RSI_ATR_EA.mq5"
-          & "C:\mt5\metaeditor64.exe" /compile:"$ea" /inc:"C:\mt5\MQL5\Include" /log:"compile.log"
-          Get-Content compile.log
+          $log = "$(Get-Location)\compile.log"
+          Write-Host "Compiling: $ea"
+
+          $proc = Start-Process -FilePath "C:\mt5\metaeditor64.exe" `
+            -ArgumentList "/compile:`"$ea`"", "/inc:`"C:\mt5\MQL5\Include`"", "/log:`"$log`"" `
+            -NoNewWindow -Wait -PassThru
+
+          Write-Host "MetaEditor exit code: $($proc.ExitCode)"
+
+          if (Test-Path $log) {
+            Get-Content $log
+          } else {
+            Write-Error "compile.log was not created - MetaEditor likely failed to launch."
+            exit 1
+          }
 
       - name: Fail the job if the log shows errors
         shell: pwsh
