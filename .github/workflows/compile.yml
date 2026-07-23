@@ -1,0 +1,25 @@
+name: Compile MQL5
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compile MQL5 Code
+        uses: fx31337/mql-compile-action@v2
+        with:
+          path: 'XAUUSD_EMA_RSI_ATR_EA.mq5'
+
+      - name: Upload Compiled .ex5 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Compiled-EA
+          path: '*.ex5'
+          
